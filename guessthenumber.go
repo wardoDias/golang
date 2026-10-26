@@ -1,45 +1,79 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"math/rand/v2"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func main() {
-	secretNum := rand.IntN(50) + 1
-	attempts := 5
-	guessed := false
+	scanner := bufio.NewScanner(os.Stdin)
 
-	var userNum int
+	const minVal, maxVal, maxAttempts int = 1, 50, 5
+	gameFinished := false
 
-	fmt.Println("I have guessed a number from 1 to 50.")
-	fmt.Println("Guess it in 5 tries.")
+GameLoop:
+	for !gameFinished {
+		attempts := maxAttempts
+		secretNum := rand.IntN(maxVal-minVal+1) + minVal
 
-	for !guessed && attempts > 0 {
-		fmt.Printf("You have %d attempts left.\n", attempts)
-		fmt.Print("Your Guess: ")
-		_, err := fmt.Scan(&userNum)
+		guessed := false
 
-		if err != nil {
-			fmt.Println("Invalid input, please enter a number")
-			continue
-		}
+		fmt.Printf("I have guessed a number from %d to %d.\n", minVal, maxVal)
+		fmt.Printf("Guess it in %d tries.\n", maxAttempts)
 
-		if userNum == secretNum {
-			fmt.Println("Congratulations! Your guessed the secret number")
-			guessed = true
+		for !guessed && attempts > 0 {
+			fmt.Printf("You have %d attempts left.\n", attempts)
+			fmt.Print("Your Guess: ")
 
-		} else {
-			attempts--
+			if !scanner.Scan() {
+				if scanner.Err() != nil {
+					fmt.Println("Error reading input")
+				}
+				fmt.Println("Exiting the game. Deuces!")
+				break GameLoop
+			}
+			userInput := scanner.Text()
+			userNum, err := strconv.Atoi(strings.TrimSpace(userInput))
 
-			if attempts == 0 {
-				fmt.Printf("Game Over! The secret number was %d", secretNum)
-			} else if userNum < secretNum {
-				fmt.Println("Higher...")
-			} else {
-				fmt.Println("Lower")
+			if err != nil {
+				fmt.Println("Invalid input, please enter a number")
+				continue
 			}
 
+			if userNum == secretNum {
+				fmt.Printf("Congratulations! You guessed the secret number, which is %d\n", secretNum)
+				guessed = true
+
+			} else {
+
+				if userNum < minVal || userNum > maxVal {
+					fmt.Printf("Out of range. No attempt point charges for this. Your number should be in %d-%d range\n", minVal, maxVal)
+					continue
+				}
+
+				attempts--
+
+				if attempts == 0 {
+					fmt.Printf("Game Over! The secret number was %d\n", secretNum)
+				} else if userNum < secretNum {
+					fmt.Println("Higher...")
+				} else {
+					fmt.Println("Lower")
+				}
+
+			}
+
+		}
+		fmt.Println("Wanna play again? (y/n)")
+		if scanner.Scan() && strings.ToLower(strings.TrimSpace(scanner.Text())) == "y" {
+			fmt.Println("Restarting the game...")
+		} else {
+			fmt.Println("Thanks for playing! Goodbye!")
+			gameFinished = true
 		}
 
 	}
